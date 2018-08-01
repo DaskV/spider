@@ -10,7 +10,7 @@ const request = require("superagent");
 const cheerio = require("cheerio");
 const utilsFiles = require('./files');
 
-let utilsUrl = function(){
+const utilsUrl = function(){
     this.domin = 'http://www.dilidili.wang'
     this.url = {
         sort:  this.domin + '/tvdh/'
@@ -21,7 +21,7 @@ let utilsUrl = function(){
     }
 }
 
-utilsUrl.prototype.getHtmlList = async function(url,rule){
+utilsUrl.prototype.getHtmlList = async function(url,rule,reg = false){
     let types = []
     request.get(url).end((err, res) => {
         if (err) {
@@ -30,6 +30,10 @@ utilsUrl.prototype.getHtmlList = async function(url,rule){
         let $ = cheerio.load(res.text)
         $(rule).each(function(){       
             let src = $(this).attr('href')
+            if(reg){
+                src = src.substr(src.lastIndexOf('/'),src.length)
+                console.log(src) 
+            }
             types.push(src)            
         })   
         let FileSys = new utilsFiles()

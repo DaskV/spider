@@ -1,24 +1,32 @@
-const fs = require('fs');
-const cheerio = require("cheerio");
-const mkdirp = require('mkdirp');
 const utilsFiles = require('./files');
 const utilsUrl = require('./url')
 
 //爬虫机器人
-exports.spideRob = async function (ctx,next) {
-    let FileSys = new utilsFiles()
-    let URLSys = new utilsUrl()
-    await spideSort(URLSys).catch(error => console.log(error.message))
-    FileSys.getFileNamelist('files')   
+const spideRob = function () {
+    this.FileSys = new utilsFiles()
+    this.URLSys = new utilsUrl()
 }
 
 
+spideRob.prototype.start = async function () {
+    this.spideSort(this.URLSys).then(_ => {
+       await this.FileSys.getFileNamelist('files')
+       await this.spideSortList(this.FileSys.folder)
+    }).catch(error => console.log(error.message))
+}
+
 //爬取分类
-async function spideSort(URLSys){  
-    URLSys.getHtmlList(URLSys.url.sort,URLSys.rule.sort)
+spideRob.prototype.spideSort = async function () {
+    this.URLSys.getHtmlList(this.URLSys.url.sort, this.URLSys.rule.sort)
 }
 
 //爬去分类下的文件列表
-async function spideSortList(){
+spideRob.prototype.spideSortList = async function (list) {
+    list.concat([]).map(item => {
+        let url = this.URLSys.domin + (item.split('files')[1]).replace(/\\/g, "/")
+        this.URLSys.getHtmlList(url,this.URLSys.rule.list,true)
+    })
 
 }
+
+module.exports = spideRob

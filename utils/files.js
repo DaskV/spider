@@ -10,7 +10,7 @@ const mkdirp = require('mkdirp');
 const path = require('path');
 
 
-let utilsFile = function () {
+const utilsFile = function () {
     this.dirName = 'files'
     this.folder = []
 }
@@ -22,6 +22,7 @@ utilsFile.prototype.createDir = function (types, dirName) {
         fs.exists(path, isexists => { //判断文件夹是否存在
             if (!isexists) {
                 mkdirp(path)
+                console.log(path)
             }
         })
     })
@@ -32,26 +33,24 @@ const getFileNameRs = function (pathParam,folder) {
     // 同步方法
     let files =  fs.readdirSync(pathParam)     
     files.forEach(filename=>{
-        let filePath = path.join(pathParam,filename)          
-        fs.stat(filePath,(eror,stats)=>{
-            if(eror){
-                console.warn('读取文件stat失败')
-                return
-            }
-            let isDir = stats.isDirectory()
-            if(isDir){
-                
-                folder.push(filePath)
-                getFileNameRs(filePath,folder)               
-            }
-        })           
+        let filePath = path.join(pathParam,filename)  
+        let stats = fs.statSync(filePath)
+        let isDir = stats.isDirectory()
+        if(isDir){              
+            folder.push(filePath)
+            getFileNameRs(filePath,folder)               
+        }      
     })
 }
 
-utilsFile.prototype.getFileNamelist = function(rootPath){
+
+const redDir  = async function(path){
+    return  fs.readdirSync(pathParam)     
+}
+
+utilsFile.prototype.getFileNamelist = async function(rootPath){
     this.folder = []
-    getFileNameRs(rootPath,this.folder)
-    console.log(1)
+    getFileNameRs(rootPath,this.folder)   
 }
 
 

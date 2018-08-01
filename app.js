@@ -21,8 +21,8 @@ app.use(async(ctx, next) => {
     console.log(`${ctx.method} ${ctx.url} - ${ms}ms`);
 });
 
-
-spider.spideRob()
+let spideRob = new spider()
+spideRob.start()
 
 
 module.exports = app;
