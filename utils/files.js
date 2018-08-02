@@ -19,21 +19,32 @@ const utilsFile = function () {
 utilsFile.prototype.createDir = function (types, dirName) {
     types.forEach(item => {
         let path = dirName + item
-        fs.exists(path, isexists => { //判断文件夹是否存在
+        fs.exists(path, isexists => { 
+            //判断文件夹是否存在
             if (!isexists) {
                 mkdirp(path)
-                console.log(path)
             }
         })
     })
 }
 
+
+
+//获取目录列表
+utilsFile.prototype.getFileNamelist = async function(rootPath){
+    this.folder = []
+    getFileNameRs(rootPath,this.folder)   
+}
+
+
+
 //递归查询文件目录
 const getFileNameRs = function (pathParam,folder) {
-    // 同步方法
+    // 同步读取目录
     let files =  fs.readdirSync(pathParam)     
     files.forEach(filename=>{
         let filePath = path.join(pathParam,filename)  
+        // 同步读取文件状态
         let stats = fs.statSync(filePath)
         let isDir = stats.isDirectory()
         if(isDir){              
@@ -42,16 +53,5 @@ const getFileNameRs = function (pathParam,folder) {
         }      
     })
 }
-
-
-const redDir  = async function(path){
-    return  fs.readdirSync(pathParam)     
-}
-
-utilsFile.prototype.getFileNamelist = async function(rootPath){
-    this.folder = []
-    getFileNameRs(rootPath,this.folder)   
-}
-
 
 module.exports = utilsFile
