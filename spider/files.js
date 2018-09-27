@@ -4,6 +4,8 @@
  * @LastEditors: DaskV
  * @LastEditTime: 2018-07-31 18:52:43
  * @Description: 文件系统
+ * 
+ * 暂未使用,后续增加下载功能后会使用该IO
  */
 const fs = require("fs");
 const mkdirp = require('mkdirp');
