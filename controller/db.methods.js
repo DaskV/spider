@@ -8,7 +8,7 @@ const comicsModel = mongoose.model('comics')
 
 
 
-
+//获取分类
 exports.sortsGet = async (param) =>{  
     return await sortsModel.find(param,err =>{
         if(err){
@@ -17,7 +17,7 @@ exports.sortsGet = async (param) =>{
         } 
     })
 }
-
+//分类保存
 exports.sortsSave =  async (param) =>{   
     const sorts = new sortsModel(param)
     const exists = await sortsModel.findOne({"name":param.name})
@@ -35,6 +35,32 @@ exports.sortsSave =  async (param) =>{
 }
 
 
+//获取地区
+exports.regionsGet = async (param) =>{  
+    return await regionsModel.find(param,err =>{
+        if(err){
+            console.log('get sorts失败',err)
+            return
+        } 
+    })
+}
+
+//保存地区
+exports.regionsSave =  async (param) =>{   
+    const regions = new regionsModel(param)
+    const exists = await regionsModel.findOne({"name":param.name})
+    if(!exists){
+        regions.save(err=>{
+            if(err){
+                console.log('save sorts失败',err)
+                return
+            }
+        })
+    }
+    else{
+        regions.update({"url":param.url})
+    }
+}
 
 // exports.regionsCompare = async (name,next = false)=>{
 //     let list = await this.regionsGet(name)   
@@ -69,7 +95,7 @@ exports.sortsSave =  async (param) =>{
 // }
 
 
-
+//获取动漫
 exports.comicsGet = async (name) =>{
     return await comicsModel.find({"name":name},(err) =>{
         if(err){
@@ -79,7 +105,7 @@ exports.comicsGet = async (name) =>{
     })
 }
 
-
+//获取动漫保存
 exports.comicsSave = async (param) =>{
     const comics = new comicsModel(param)
     const exists = await comicsModel.findOne({"name":param.name})

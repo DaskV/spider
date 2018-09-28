@@ -10,7 +10,8 @@ const sorts = new Schema({
 
 //地区
 const regions = new Schema({
-    name: String
+    name: String,
+    url:String
 })
 
 
@@ -24,16 +25,11 @@ const comicState = new Schema({
 //动漫
 const comics = new Schema({
     name: String,
-    sortId: ObjectId,
-    regionId: ObjectId,
-    regionName:String,   
-    stateId: ObjectId,
-    stateName:String,
-    point: String,
+    sortId: Array,
+    regionId: ObjectId,  
     cover:String,
     describe: String,
-    year: String,
-    plays: [Schema.Types.Mixed]
+    url:String
 })
 
 

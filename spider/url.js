@@ -1,14 +1,17 @@
-const request = require("superagent");
-const cheerio = require("cheerio");
+const request = require("superagent")
+const cheerio = require("cheerio")
 
 const utilsUrl = function () {
-    this.domin = 'http://www.dilidili.wang'
+    this.domin = 'http://www.zzzfun.com/'
     this.url = {
-        sort: this.domin + '/tvdh/'
+        sort: this.domin + '?m=vod-type-id-1.html',
     }
     this.rule = {
-        sort: '.tag-list ',
-        list: '.anime_list dl',
+        sort: '#vType',
+        region:"vArea",
+        list: '.search-result a',
+        play:'.episode-wrap',
+        video
     }
 }
 
