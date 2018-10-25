@@ -1,6 +1,7 @@
-const request = require("superagent")
 const utilsUrl = require('./url')
 const dbcontroller = require('../controller/db.controller')
+const base64 = require('./helper')
+const request = require("superagent")
 
 
 //爬虫机器人
@@ -12,8 +13,9 @@ const spideRob = function () {
 
 spideRob.prototype.start = async function () {
     this.dbcontroller.start()
-    await this.spideSort() 
-    await this.spideList()
+    // await this.spideSort() 
+    // await this.spideList()
+    await this.spidePlays()
    
 }
 
@@ -70,6 +72,7 @@ spideRob.prototype.spideList = async function () {
     console.log('开始——爬取动漫列表')
     for(let item of list){
         let url = this.URLSys.domin + item.url
+
         let data = await this.URLSys.getHtmlList(url, $=>{
             return handleListDom($,list)
         })
@@ -81,34 +84,7 @@ spideRob.prototype.spideList = async function () {
     console.log('结束——爬取动漫列表')
 
 }
-//处理动漫列表dom
-function handleListDom($,array){
-    spideRob.call(this)
-    let data = []
-    $(this.URLSys.rule.list).each(function(){
-        let stateName = $(this).find(".title-sub span:nth-child(1)").text()
-        let name = $(this).find(".title-big").text()
-        let sortNameList = $(this).find(".title-sub span:nth-child(2)").split("&nbsp;")
-        let sortsIds = []
-        array.forEach(item=>{
-            sortNameList.forEach(value=>{
-                if(value == item.name){
-                    sortsIds.push(item.id)
-                }
-            })
-        })      
-        data.push({
-            name:name,
-            stateName:stateName,     
-            describe:$(this).find(".d-descr").text(),
-            sortId:sortsIds,
-            cover:$(this).find(".d-cover-big img").attr("src"),
-            url:$(this).attr("href")
-        })       
-        console.log(`爬取${name}成功`)                                     
-    })
-    return data
-}
+
 
 
 //爬取动漫剧集
@@ -120,16 +96,24 @@ spideRob.prototype.spidePlays= async function(){
         let data = await this.URLSys.getHtmlList(url, $=>{
             return handlePlayListDom($)
         })
+        let child = []
         for(var key of data){
+            console.log(`爬取——${item.name}——${key.name}`)
+            if(key.name == '第828集'){
+                console.log(00)
+            }
             let playsUrl = this.URLSys.domin + key.url
             let videoUrl = await this.URLSys.getHtmlList(playsUrl, $=>{
-                return handleVideoDom($)
+                return handleVideoUrl($)
             })
             key['videoUrl'] = videoUrl
+            child.push(key)      
         }
+        await this.dbcontroller.methods.comicsChildSave(item.name,child)
     }
     console.log('结束——爬取动漫剧集')
 }
+
 //处理动漫剧集dom
 function handlePlayListDom($){
     spideRob.call(this)
@@ -158,35 +142,56 @@ function handlePlayListDom($){
     return data
 }
 
-//处理播放播放器dom
-function handleVideoDom($){
+//处理动漫列表dom
+function handleListDom($,array){
     spideRob.call(this)
-    let $iframe = $(this.URLSys.rule.video).find("iframe")
-    let isIframe = $iframe.length > 0 ? true : false
-    let videoUrl
-    if(isIframe){
-        let url = $iframe.attr("src")
-        videoUrl = await new Promise((reslove,reject)=>{
-            request.posy('http://y2.mt2t.com:91/ifr/api').send({
-                url:url,
-                type:'',
-                from:'mt2t.com',
-                device:'',
-                up:0
-            }).end((err,res)=>{
-                res = JSON.parse(res)
-                if (err) {
-                    reject(err,"爬取IFrame Video失败")
-                }
-                reslove(res.url)
-            })
-        }) 
-    }
-    else{
-        videoUrl = $(this.URLSys.rule.video).find('source').attr("src")
-    }
+    let data = []
+    $(this.URLSys.rule.list).each(function(){
+        let stateName = $(this).find(".title-sub span:nth-child(1)").text()
+        let name = $(this).find(".title-big").text()
+        
+        let sortNameList = $(this).find(".title-sub span:nth-child(3)").text().split(",")
 
-    return videoUrl
+        let sortsIds = []
+        array.forEach(item=>{
+            sortNameList.forEach(value=>{
+                if(value == item.name){
+                    sortsIds.push(item.id)
+                }
+            })
+        })      
+        data.push({
+            name:name,
+            stateName:stateName,     
+            describe:$(this).find(".d-descr").text(),
+            sortId:sortsIds,
+            cover:$(this).find(".d-cover-big img").attr("src"),
+            url:$(this).attr("href")
+        })       
+        console.log(`爬取${name}成功`)                                     
+    })
+    return data
+}
+
+//获取播放播放器Url
+async function handleVideoUrl($){
+
+    let html = $("#bofang_box script").eq(0).html()
+    let obj = JSON.parse(html.substr(16,html.length))
+    let url = unescape(base64(obj.url)) 
+    return await getRealUrl(url)
+}   
+
+//请求真正的url
+async function getRealUrl(url){
+    return new Promise((resolve, reject) => {
+        request.get(url).end((err, res) => {
+            if (err) {
+                reject(err)
+            }
+            resolve(res.text)             
+        })
+    })
 }
 
 module.exports = spideRob

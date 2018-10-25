@@ -11,7 +11,7 @@ const utilsUrl = function () {
         region:"vArea",
         list: '.search-result a',
         play:'.episode-wrap',
-        video
+        video:'#playleft'
     }
 }
 
@@ -23,11 +23,10 @@ utilsUrl.prototype.getHtmlList = function (url,handle) {
             }
             let $ = cheerio.load(res.text)        
             resolve(handle($))
+           
         })
     })
 }
-
-
 
 
 module.exports = utilsUrl

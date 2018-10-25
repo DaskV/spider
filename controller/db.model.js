@@ -21,7 +21,6 @@ const comicState = new Schema({
     name: String
 })
 
-
 //动漫
 const comics = new Schema({
     name: String,
@@ -29,8 +28,10 @@ const comics = new Schema({
     regionId: ObjectId,  
     cover:String,
     describe: String,
-    url:String
+    url:String,
+    children:Array
 })
+
 
 
 

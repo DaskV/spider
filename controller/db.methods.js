@@ -96,10 +96,10 @@ exports.regionsSave =  async (param) =>{
 
 
 //获取动漫
-exports.comicsGet = async (name) =>{
-    return await comicsModel.find({"name":name},(err) =>{
+exports.comicsGet = async (param) =>{
+    return await comicsModel.find(param,(err) =>{
         if(err){
-            console.log('get regions失败',err)
+            console.log('get comics失败',err)
             return
         }
     })
@@ -112,7 +112,7 @@ exports.comicsSave = async (param) =>{
     if(!exists){
         comics.save(err=>{
             if(err){
-                console.log('save sorts失败',err)
+                console.log('save comics失败',err)
                 return
             }
         })
@@ -120,4 +120,10 @@ exports.comicsSave = async (param) =>{
     else{
         comics.update(param)
     }
+}
+
+
+//保存动漫剧集
+exports.comicsChildSave = async (name,child) =>{
+    comicsModel.findOneAndUpdate({'name':name},{ children:child })
 }
