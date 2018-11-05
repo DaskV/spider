@@ -13,8 +13,8 @@ const spideRob = function () {
 
 spideRob.prototype.start = async function () {
     this.dbcontroller.start()
-    // await this.spideSort() 
-    // await this.spideList()
+    await this.spideSort() 
+    await this.spideList()
     await this.spidePlays()
    
 }
@@ -99,9 +99,6 @@ spideRob.prototype.spidePlays= async function(){
         let child = []
         for(var key of data){
             console.log(`爬取——${item.name}——${key.name}`)
-            if(key.name == '第828集'){
-                console.log(00)
-            }
             let playsUrl = this.URLSys.domin + key.url
             let videoUrl = await this.URLSys.getHtmlList(playsUrl, $=>{
                 return handleVideoUrl($)
@@ -120,19 +117,33 @@ function handlePlayListDom($){
     let index = 0
     let data = []  
     let compare = []
-    let l = $(".episode-wrap").length
+    let l = $(".slider-list").length
+    
     if(l>1){
-        $(".episode-wrap ul").each(function(i){
+        $(".slider-list").each(function(i){
+            let degree = 1
+            const text = $(this).find("span").text()
+            if(text.indexOf('No.S')>-1){
+                degree = 1
+            }
+            if(text.indexOf('No.A')>-1){
+                degree = 2
+            }
+            if(text.indexOf('No.B')>-1){
+                degree = 3
+            }
             compare.push({
                 i:i,
-                count: $(this).find("li").length
+                degree:degree,
+                text:text
             })
         })
-        index = compare.sort((a,b)=>{
-            return b.count - a.count
+        index = compare.sort((a,b) =>{
+            return a.degree - b.degree
         })[0].i
+        console.log(`${compare[0].text}`)
     }
-    $(this.URLSys.rule.play).eq(0).find("li").each(function(idx){
+    $(this.URLSys.rule.play).find(".episode").eq(index).find("li").each(function(idx){
         data.push({
             index:idx,
             name:$(this).find("span").text(),
@@ -175,15 +186,32 @@ function handleListDom($,array){
 
 //获取播放播放器Url
 async function handleVideoUrl($){
-
     let html = $("#bofang_box script").eq(0).html()
     let obj = JSON.parse(html.substr(16,html.length))
     let url = unescape(base64(obj.url)) 
-    return await getRealUrl(url)
+    return isFramePlayer(url)
 }   
 
+//是否iframe 播放器
+async function isFramePlayer(url){
+    spideRob.call(this)
+    console.log(url)
+    if(url.indexOf('.mp4')>-1){
+        this.URLSys.getHtmlList(`${this.URLSys.domin}/static/danmu/od.php?${url}`,$=>{
+            var videoUrl = $("body video source").attr("src")
+            return videoUrl
+        }).catch(e=>{
+            console.error(e)
+        })
+    }
+    else{
+        return await getRealUrl(url)
+    }
+}
+
+
 //请求真正的url
-async function getRealUrl(url){
+function getRealUrl(url){
     return new Promise((resolve, reject) => {
         request.get(url).end((err, res) => {
             if (err) {
@@ -191,7 +219,9 @@ async function getRealUrl(url){
             }
             resolve(res.text)             
         })
-    })
+    }).catch(e=>{
+        console.log(e)
+    })   
 }
 
 module.exports = spideRob

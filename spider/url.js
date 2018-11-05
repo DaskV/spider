@@ -17,15 +17,19 @@ const utilsUrl = function () {
 
 utilsUrl.prototype.getHtmlList = function (url,handle) {
     return new Promise((resolve, reject) => {
-        request.get(url).end((err, res) => {
-            if (err) {
-                reject(err)
-            }
-            let $ = cheerio.load(res.text)        
-            resolve(handle($))
-           
-        })
-    })
+        try{
+            request.get(url).end((err, res) => {
+                if (err) {
+                    reject(err)
+                }
+                let $ = cheerio.load(res.text)        
+                resolve(handle($))         
+            })       
+        }
+        catch(e){
+            console.error(e)
+        }   
+    })    
 }
 
 

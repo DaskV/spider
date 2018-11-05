@@ -3,7 +3,6 @@ require('./db.model')
 
 const sortsModel =  mongoose.model('sorts')
 const regionsModel = mongoose.model('regions')
-const comicStateModel = mongoose.model('comicState')
 const comicsModel = mongoose.model('comics')
 
 
@@ -123,7 +122,13 @@ exports.comicsSave = async (param) =>{
 }
 
 
-//保存动漫剧集
+//更新动漫剧集
 exports.comicsChildSave = async (name,child) =>{
-    comicsModel.findOneAndUpdate({'name':name},{ children:child })
+    await comicsModel.update({'name':name},{ children:child },{ multi :true },function(err){
+        if(err){
+            console.log(`更新${name} 剧集失败`,err)
+            return
+        }
+        console.log(`更新${name} 剧集成功`)
+    })
 }
