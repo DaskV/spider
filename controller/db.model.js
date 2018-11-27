@@ -15,12 +15,6 @@ const regions = new Schema({
 })
 
 
-//动漫状态
-const comicState = new Schema({
-    stateId: ObjectId,
-    name: String
-})
-
 //动漫
 const comics = new Schema({
     name: String,
@@ -32,10 +26,16 @@ const comics = new Schema({
     children:Array
 })
 
+const comicsFail = new Schema({
+    link:Number,
+    url:String,
+    parent:Object,
+    child:Object
+})
 
 
 
 mongoose.model('sorts', sorts)
 mongoose.model('regions', regions)
-mongoose.model('comicState', comicState)
 mongoose.model('comics', comics)
+mongoose.model('comicsFail', comicsFail)

@@ -4,6 +4,7 @@ const base64 = require('./helper')
 const request = require("superagent")
 
 
+
 //爬虫机器人
 const spideRob = function () {
     this.URLSys = new utilsUrl()
@@ -12,11 +13,15 @@ const spideRob = function () {
 
 
 spideRob.prototype.start = async function () {
-    this.dbcontroller.start()
-    await this.spideSort() 
-    await this.spideList()
-    await this.spidePlays()
-   
+    const startTime = new Date().getTime()
+        this.dbcontroller.start()
+        await this.spideSort() 
+        const count = await handlePagination(this.URLSys.url.sort)
+        await this.spideList(count)
+        await this.spidePlays()     
+        await this.failUrlreSpide()
+    const endTime = new Date().getTime()
+    console.log('用时(秒):',(endTime - startTime)/1000)
 }
 
 
@@ -24,7 +29,7 @@ spideRob.prototype.start = async function () {
 //爬取动漫 分类、语言
 spideRob.prototype.spideSort = async function () {
     console.log('开始——爬取动漫 分类、语言')
-    let stuffs = await this.URLSys.getHtmlList(this.URLSys.url.sort,$=>{
+    let stuffs = await this.URLSys.spideRquest(this.URLSys.url.sort,$=>{
         let obj = {
             sorts:[],
             regions:[]
@@ -38,7 +43,7 @@ spideRob.prototype.spideSort = async function () {
                 })
             }       
         })
-        //语言
+        //语言  
         $(this.URLSys.rule.region).find('a').each(function(index){
             if(index !=0){
                 obj.regions.push({
@@ -48,7 +53,7 @@ spideRob.prototype.spideSort = async function () {
             }       
         })
         return obj
-    })
+    },0)
     console.log('结束——爬取动漫 分类、语言')
     //存写入数据库
     console.log('开始——分类写入数据库')
@@ -67,49 +72,69 @@ spideRob.prototype.spideSort = async function () {
 
 
 //爬取动漫列表
-spideRob.prototype.spideList = async function () {
+spideRob.prototype.spideList = async function (count) {
     let list = await this.dbcontroller.methods.sortsGet()
     console.log('开始——爬取动漫列表')
-    for(let item of list){
-        let url = this.URLSys.domin + item.url
-
-        let data = await this.URLSys.getHtmlList(url, $=>{
+    let url = this.URLSys.url.sort   
+    let data = []
+    for(let page=1 ; page< count+1; page++){
+        let head = url.split(".html")[0]
+        const pageUrl = head.slice(0,head.length-1) + page
+        let pagelist = await this.URLSys.spideRquest(pageUrl, $=>{
             return handleListDom($,list)
-        })
-
-        for(var key of data){
-            await this.dbcontroller.methods.comicsSave(key)
-        }
+        },2)
+        data = data.concat(pagelist)
+    }
+    for(let key of data){
+        await this.dbcontroller.methods.comicsSave(key)
     }
     console.log('结束——爬取动漫列表')
 
 }
 
+//处理动漫列表分页
+async function handlePagination(url){
+    spideRob.call(this)
+    return await this.URLSys.spideRquest(url, $=>{
+        let src =  $(this.URLSys.rule.pagination).attr("href")
+        const count =  src.substring(src.indexOf('page-')+5,src.indexOf('.html'))
+        return Number(count) 
+    },1)
+}
 
 
 //爬取动漫剧集
 spideRob.prototype.spidePlays= async function(){
     let list = await this.dbcontroller.methods.comicsGet()
     console.log('开始——爬取动漫剧集')
-    for(var item of list){
+    for(let item of list){
         let url = this.URLSys.domin + item.url
-        let data = await this.URLSys.getHtmlList(url, $=>{
+        let data = await this.URLSys.spideRquest(url, $=>{
             return handlePlayListDom($)
-        })
-        let child = []
-        for(var key of data){
-            console.log(`爬取——${item.name}——${key.name}`)
-            let playsUrl = this.URLSys.domin + key.url
-            let videoUrl = await this.URLSys.getHtmlList(playsUrl, $=>{
-                return handleVideoUrl($)
-            })
-            key['videoUrl'] = videoUrl
-            child.push(key)      
-        }
+        },3,{ parent : item })
+        console.log(`开始爬取——${item.name}`)
+        let child = await this.spidePlaysDetails(data,item)
         await this.dbcontroller.methods.comicsChildSave(item.name,child)
+        console.log(`结束爬取——${item.name}`)
     }
     console.log('结束——爬取动漫剧集')
 }
+
+//爬去剧集内容详情
+spideRob.prototype.spidePlaysDetails= async function(data,item){
+    let child = []
+    for(let key of data){
+        console.log(`${key.name}`)
+        let playsUrl = this.URLSys.domin + key.url
+        let videoUrl = await this.URLSys.spideRquest(playsUrl, $=>{
+            return handleVideoUrl($,{ parent : item, child:key })
+        },4,{ parent : item, child:key })
+        key['videoUrl'] = videoUrl
+        child.push(key)      
+    }
+    return child
+}
+
 
 //处理动漫剧集dom
 function handlePlayListDom($){
@@ -132,6 +157,9 @@ function handlePlayListDom($){
             if(text.indexOf('No.B')>-1){
                 degree = 3
             }
+            if(text.indexOf('No.T')>-1){
+                degree = 4
+            }
             compare.push({
                 i:i,
                 degree:degree,
@@ -152,6 +180,8 @@ function handlePlayListDom($){
     })
     return data
 }
+
+
 
 //处理动漫列表dom
 function handleListDom($,array){
@@ -184,44 +214,127 @@ function handleListDom($,array){
     return data
 }
 
+
+
 //获取播放播放器Url
-async function handleVideoUrl($){
+async function handleVideoUrl($,comics = { parent : {} , child:{} }){
+    this.comics = comics
     let html = $("#bofang_box script").eq(0).html()
     let obj = JSON.parse(html.substr(16,html.length))
     let url = unescape(base64(obj.url)) 
-    return isFramePlayer(url)
+    let from = obj.from == 'odb' ?  'oda' : obj.from
+    return isFramePlayer(url,from)
 }   
 
 //是否iframe 播放器
-async function isFramePlayer(url){
+async function isFramePlayer(url,from){
     spideRob.call(this)
-    console.log(url)
-    if(url.indexOf('.mp4')>-1){
-        this.URLSys.getHtmlList(`${this.URLSys.domin}/static/danmu/od.php?${url}`,$=>{
-            var videoUrl = $("body video source").attr("src")
+    handleVideoUrl.bind(this)
+    //ifame播放器
+    const compareUrl = url.toUpperCase()
+    if(compareUrl.indexOf('.MP4')>-1){
+        url = isContainChinese(url)
+        const realUrl = `${this.URLSys.domin}/static/danmu/${from}.php?${url}`
+        console.log(realUrl)
+        return await this.URLSys.spideRquest(realUrl,$=>{
+            let videoUrl = $("body video source").attr("src")
             return videoUrl
-        }).catch(e=>{
-            console.error(e)
-        })
+        },5,this.comics)
     }
-    else{
-        return await getRealUrl(url)
+    console.log(url)
+    //video播放器 Blob 
+    if(url.indexOf('blob')>-1){
+        console.log(url)
     }
+    //video mp4
+    return await getRealUrl(url)
+    
 }
 
 
 //请求真正的url
 function getRealUrl(url){
+    spideRob.call(this)
+    handleVideoUrl.bind(this)
     return new Promise((resolve, reject) => {
         request.get(url).end((err, res) => {
             if (err) {
-                reject(err)
+                return reject(err)
             }
             resolve(res.text)             
         })
     }).catch(e=>{
-        console.log(e)
+        console.error('爬取视频路径失败:',`${e.message},${url}`)
+        this.dbcontroller.methods.comicsFailSave({
+            url:url,
+            link:6,
+            parent:this.comics.parent,
+            child:this.comics.child
+        })
     })   
 }
+
+//判断是否包含中文
+function isContainChinese(str){
+    if(/.*[\u4e00-\u9fa5]+.*$/.test(str)){
+        return encodeURI(str)
+    }
+    return str
+}
+
+
+//失败链接的再爬取
+spideRob.prototype.failUrlreSpide = async function(){
+    console.log('开始——爬取错误链接')
+    let list = await this.dbcontroller.methods.comicsFailGet()
+    for(let item of list){
+        switch(item.link){
+            case 0 : 
+                    await this.spideSort()
+                    break
+            case 1 : 
+                    const count = await handlePagination(this.URLSys.url.sort)
+                    await this.spideList(count)
+                    break
+            case 2 :
+                    let pagelist = await this.URLSys.spideRquest(item.url, $=>{
+                        return handleListDom($,list)
+                    },2)
+                    for(let key of pagelist){
+                        await this.dbcontroller.methods.comicsSave(key)
+                    }
+                    break
+            case 3 :
+                    let data = await this.URLSys.spideRquest(item.url, $=>{
+                        return handlePlayListDom($)
+                    },3)
+                    let child = await this.spidePlaysDetails(data,item.parent)
+                    await this.dbcontroller.methods.comicsChildSave(item.parent.name,child)
+                    break
+            case 4 : 
+                    let playsUrl = this.URLSys.domin + item.child.url            
+                    let videoUrl = await this.URLSys.spideRquest(playsUrl, $=>{
+                        return handleVideoUrl($)
+                    },4)
+                    item.child['videoUrl'] = videoUrl
+                    await this.dbcontroller.methods.comicsChildAppend(item.parent.id,item.child)
+                    break
+            case 5 :
+                    item.child['videoUrl'] = await this.URLSys.spideRquest(item.url,$=>{
+                        let videoUrl = $("body video source").attr("src")
+                        return videoUrl
+                    },5)
+                    await this.dbcontroller.methods.comicsChildAppend(item.parent.id,item.child)
+                    break
+            case 6 : 
+                    item.child['videoUrl'] = await getRealUrl(item.url)
+                    await this.dbcontroller.methods.comicsChildAppend(item.parent.id,item.child)
+                    break                  
+        }
+        await this.dbcontroller.methods.comicsFailRemove(item.id)
+    }
+    console.log('结束——爬取错误链接')
+}
+
 
 module.exports = spideRob

@@ -1,28 +1,18 @@
-const Koa = require('koa')
-const app = new Koa()
-const json = require('koa-json')
-const onerror = require('koa-onerror')
-const bodyparser = require('koa-bodyparser')()
-const logger = require('koa-logger')
+
 const spider = require('./spider/spider')
+const schedule = require("node-schedule")
 
-onerror(app)
+// const task = () =>{
+//     schedule.scheduleJob('30 1 1 * * *', ()=>{
+//         console.log('开始执行爬虫任务:'+ new Date())
+//         let spideRob = new spider()
+//         spideRob.start()
+//     })
+// }
+// task()
 
-app.use(bodyparser)
-app.use(json())
-app.use(logger())
-
-app.use(async(ctx, next) => {
-    const start = new Date()
-    await next()
-    const ms = new Date() - start
-    console.log(`${ctx.method} ${ctx.url} - ${ms}ms`)
-
-})
-
-
-let spideRob = new spider()
-spideRob.start()
+        let spideRob = new spider()
+        spideRob.start()
 
 
-module.exports = app
+

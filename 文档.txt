@@ -1,0 +1,4 @@
+服务器 mongodb 长时启动命令
+cd /usr/local/mongodb/bin
+
+./mongod --dbpath=/data/db  --fork --logpath=/data/logs

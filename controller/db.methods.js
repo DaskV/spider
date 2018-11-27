@@ -4,6 +4,8 @@ require('./db.model')
 const sortsModel =  mongoose.model('sorts')
 const regionsModel = mongoose.model('regions')
 const comicsModel = mongoose.model('comics')
+const comicsFailModel = mongoose.model('comicsFail')
+
 
 
 
@@ -56,42 +58,8 @@ exports.regionsSave =  async (param) =>{
             }
         })
     }
-    else{
-        regions.update({"url":param.url})
-    }
 }
 
-// exports.regionsCompare = async (name,next = false)=>{
-//     let list = await this.regionsGet(name)   
-//     if(list.length == 0 && next){
-//         await this.regionsSave(name)
-//         list = await this.regionsGet(name)
-//     }
-//     return list
-// }
-
-
-// exports.regionsGet = async (name)=>{
-//     return await regionsModel.find({"name":name},(err) =>{
-//         if(err){
-//             console.log('get regions失败',err)
-//             return
-//         }
-//     })
-// }
-
-// exports.regionsSave = async (name) =>{  
-//     const exists = await regionsModel.findOne({"name":name})  
-//     if(!exists){
-//         const regions = new regionsModel({"name":name})
-//         regions.save(err=>{
-//             if(err){
-//                 console.log('save regions 失败',err)
-//             }
-//         })
-//     }
-    
-// }
 
 
 //获取动漫
@@ -104,7 +72,7 @@ exports.comicsGet = async (param) =>{
     })
 }
 
-//获取动漫保存
+//动漫保存
 exports.comicsSave = async (param) =>{
     const comics = new comicsModel(param)
     const exists = await comicsModel.findOne({"name":param.name})
@@ -130,5 +98,52 @@ exports.comicsChildSave = async (name,child) =>{
             return
         }
         console.log(`更新${name} 剧集成功`)
+    })
+}
+
+
+//追加动漫剧集
+exports.comicsChildAppend = async (id,child) =>{
+    await comicsModel.update({'id':id},{ '$push':{ children : child } },function(err){
+        if(err){
+            console.log(`追加剧集失败`,err)
+            return
+        }
+        console.log(`追加剧集成功`)
+    })
+}
+
+//失败链接保存
+exports.comicsFailSave = async (param) =>{
+    const comicsFail = new comicsFailModel(param)
+    const exists = await comicsFailModel.findOne({"url":param.url})
+    if(!exists){
+        comicsFail.save(err=>{
+            if(err){
+                console.log('save comicsFail失败',err)
+                return
+            }
+        })
+    }
+}
+
+//获取失败链接列表
+exports.comicsFailGet = async (param) =>{
+    return await comicsFailModel.find({},(err) =>{
+        if(err){
+            console.log('get comicsFail失败',err)
+            return
+        }
+    })
+
+}
+
+//删除失败链接
+exports.comicsFailRemove = async (id) =>{
+    comicsFailModel.findByIdAndRemove(id,(err)=>{
+        if(err){
+            console.log('remove comicsFail失败',err)
+            return
+        }
     })
 }
