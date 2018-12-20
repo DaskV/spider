@@ -8,7 +8,11 @@ let controller = new dbcontroller()
 const utilsUrl = function () {
     this.domin = 'http://www.zzzfun.com'
     this.url = {
-        sort: this.domin + '/vod-type-id-1-page-1.html'
+        sort: this.domin + '/vod-type-id-1-page-1.html', //日漫
+        domestic:this.domin + '/vod-type-id-2.html',//国漫
+        new:this.domin + '/vod-type-id-42.html', //新番
+        movie:this.domin + '/vod-show-id-3.html',//剧场版
+        tv:this.domin + '/vod-type-id-4.html' // 影视剧
         
     }
     this.rule = {
@@ -16,7 +20,10 @@ const utilsUrl = function () {
         region:"#vArea",
         list: '.search-result a',
         play:'.episode-wrap',
+        playRegion:'#transArea',
         video:'#playleft',
+        state:'.content-count > .count-item:nth-child(2) > span:nth-child(2)',
+        cv:'.content-count > .count-item:nth-child(3) > span:nth-child(2) > a',
         pagination:'.page_link:nth-last-child(1)'
     }
 }

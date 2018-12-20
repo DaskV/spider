@@ -1,10 +1,12 @@
 const mongoose = require('mongoose')
+const ObjectId = mongoose.Types.ObjectId
 require('./db.model')
 
 const sortsModel =  mongoose.model('sorts')
 const regionsModel = mongoose.model('regions')
 const comicsModel = mongoose.model('comics')
 const comicsFailModel = mongoose.model('comicsFail')
+const bannerModel = mongoose.model('banner')
 
 
 
@@ -21,7 +23,7 @@ exports.sortsGet = async (param) =>{
 //分类保存
 exports.sortsSave =  async (param) =>{   
     const sorts = new sortsModel(param)
-    const exists = await sortsModel.findOne({"name":param.name})
+    const exists = await sortsModel.findOne({"name":param.name,"belong":param.belong})
     if(!exists){
         sorts.save(err=>{
             if(err){
@@ -49,7 +51,7 @@ exports.regionsGet = async (param) =>{
 //保存地区
 exports.regionsSave =  async (param) =>{   
     const regions = new regionsModel(param)
-    const exists = await regionsModel.findOne({"name":param.name})
+    const exists = await regionsModel.findOne({"name":param.name,"belong":param.belong})
     if(!exists){
         regions.save(err=>{
             if(err){
@@ -91,13 +93,13 @@ exports.comicsSave = async (param) =>{
 
 
 //更新动漫剧集
-exports.comicsChildSave = async (name,child) =>{
-    await comicsModel.update({'name':name},{ children:child },{ multi :true },function(err){
+exports.comicsChildSave = async (item,child) =>{
+    await comicsModel.findByIdAndUpdate(ObjectId(item.id),{ children:child, $set:{ regionId:item.regionId , state:item.state, cv:item.cv }},function(err){
         if(err){
-            console.log(`更新${name} 剧集失败`,err)
+            console.log(`更新${item.name} 剧集失败`,err)
             return
         }
-        console.log(`更新${name} 剧集成功`)
+        console.log(`更新${item.name} 剧集成功`)
     })
 }
 
@@ -147,3 +149,20 @@ exports.comicsFailRemove = async (id) =>{
         }
     })
 }
+
+
+//保存banner
+exports.bannerSave = async (param) =>{
+    const name = param.comicsName.replace(/(\s*$)/g, "")
+    const comics = await comicsModel.findOne({'name': name})
+    param['comicsId'] = comics.id
+    const banner = new bannerModel(param)
+
+    banner.save(err=>{
+        if(err){
+            console.log('save banner失败',err)
+            return
+        }
+    })
+}
+

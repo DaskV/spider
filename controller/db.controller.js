@@ -2,7 +2,8 @@ const mongoose = require('mongoose')
 const methods = require('./db.methods')
 
 function dbcontroller(){
-    this.dbUrl = 'mongodb://localhost:27017/'
+    // this.dbUrl = 'mongodb://148.70.112.142:27017/'
+    this.dbUrl = 'mongodb://127.0.0.1:27017/'
     this.methods = methods
 }
 

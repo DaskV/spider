@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "start": "nodemon bin/www",
+    "start": "node app.js",
     "dev": "./node_modules/.bin/nodemon bin/www",
     "prd": "pm2 start bin/www",
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -12,6 +12,7 @@
   "dependencies": {
     "cheerio": "^1.0.0-rc.2",
     "debug": "^2.6.3",
+    "koa": "^2.6.2",
     "mkdirp": "^0.5.1",
     "mongoose": "^5.2.6",
     "node-adodb": "^4.2.2",
